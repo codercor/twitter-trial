@@ -130,7 +130,7 @@ app.get('/user/twitter/callback', async (req, res) => {
                 oauth_token_secret: null
             })
 
-            res.redirect("http://localhost:3001")
+            res.redirect(process.env.CLIENT_URL ||"http://localhost:3001")
         })
         .catch(() => res.status(403).send('Invalid verifier or access tokens!'));
 });
