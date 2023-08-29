@@ -147,7 +147,7 @@ export default function Home() {
             : <button
               onClick={() => {
                 connectTwitter().then((authLink) => {
-                  window.open(authLink.url, '_blank')
+                  window.location.href = authLink.url
                 })
               }}
               className='border bg-white text-black px-4 py-2 rounded-2xl'> Connect twitter </button>
