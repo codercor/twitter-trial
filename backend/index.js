@@ -15,6 +15,12 @@ app.use(cors());
 app.use(cookieParser());
 app.use(express.json())
 
+
+app.use((req,res,next)=>{
+    console.log("request handled", req.path);
+    next();
+})
+
 const appClient = new TwitterApi({ appKey: CONSUMER_KEY, appSecret: CONSUMER_SECRET });
 
 app.get("/me", auth, (req, res) => {
@@ -133,7 +139,7 @@ app.get('/user/twitter/callback', async (req, res) => {
 
 mongoose.connect(process.env.MONGO_URI).then(() => {
     console.log("Connected to MongoDB");
-    app.listen(3000, () => {
+    app.listen(process.env.PORT || 3000, () => {
         console.log("Server running on port 3000");
     });
 }).catch((err) => {
@@ -141,3 +147,5 @@ mongoose.connect(process.env.MONGO_URI).then(() => {
     console.log(err);
 });
 
+
+module.exports = app;

@@ -5,7 +5,7 @@ import axios from 'axios'
 const inter = Inter({ subsets: ['latin'] })
 
 const service = axios.create({
-  baseURL: 'http://localhost:3000/',
+  baseURL: process.env.NEXT_PUBLIC_API_URL
 });
 
 const login = async (username: string, password: string) => {
