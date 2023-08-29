@@ -79,7 +79,7 @@ app.post("/register", async (req, res) => {
 
 
 app.get("/connect", auth, async (req, res) => {
-    const authLink = await appClient.generateAuthLink("http://localhost:3000/user/twitter/callback", { linkMode: 'authorize' });
+    const authLink = await appClient.generateAuthLink(`${process.env.API_URL}/user/twitter/callback`, { linkMode: 'authorize' });
     // By default, oauth/authenticate are used for auth links, you can change with linkMode
     // Use URL generated
     await User.findOneAndUpdate({ username: req.user.username }, {
