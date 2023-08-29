@@ -7,14 +7,41 @@ const jwt = require("jsonwebtoken");
 const { TwitterApi } = require("twitter-api-v2");
 const User = require("./user.model");
 const auth = require("./auth.middleware");
-
+const cors = require("cors");
 const CONSUMER_KEY = process.env.TWITTER_API_KEY;
 const CONSUMER_SECRET = process.env.TWITTER_API_KEY_SECRET;
 
-const client = new TwitterApi({ appKey: CONSUMER_KEY, appSecret: CONSUMER_SECRET });
+app.use(cors());
 app.use(cookieParser());
 app.use(express.json())
 
+const appClient = new TwitterApi({ appKey: CONSUMER_KEY, appSecret: CONSUMER_SECRET });
+
+app.get("/me", auth, (req, res) => {
+    res.json({ user: req.user })
+})
+app.get("/likes", auth, async (req, res) => {
+    try {
+        let user = req.user;
+        console.log("user", user);
+
+        // OAuth 1.0a User Context için Twitter API istemcisini oluşturma
+        let client = new TwitterApi({
+            appKey: CONSUMER_KEY,
+            appSecret: CONSUMER_SECRET,
+            accessToken: user.twitterAccessToken,
+            accessSecret: user.twitterAccessSecret,
+        });
+
+        let me = await client.v2.me()
+        console.log("me", me);
+        let tweets = await client.v2.userLikedTweets(me.data.id)
+        res.json({ tweets })
+    } catch (error) {
+        console.log("error", error);
+        res.json({ error })
+    }
+});
 
 app.post("/login", async (req, res) => {
     const { username, password } = req.body;
@@ -46,17 +73,23 @@ app.post("/register", async (req, res) => {
 
 
 app.get("/connect", auth, async (req, res) => {
-    const authLink = await client.generateAuthLink("http://localhost:3000/user/twitter/callback");
+    const authLink = await appClient.generateAuthLink("http://localhost:3000/user/twitter/callback", { linkMode: 'authorize' });
     // By default, oauth/authenticate are used for auth links, you can change with linkMode
     // Use URL generated
-    //set cookie 
-
     await User.findOneAndUpdate({ username: req.user.username }, {
         oauth_token: authLink.oauth_token,
         oauth_token_secret: authLink.oauth_token_secret
     })
 
     res.json({ authLink });
+})
+
+app.get("/disconnect", auth, async (req, res) => {
+    await User.findOneAndUpdate({ username: req.user.username }, {
+        twitterAccessSecret: null,
+        twitterAccessToken: null
+    })
+    res.json({ success: true });
 })
 
 app.get('/user/twitter/callback', async (req, res) => {
@@ -91,7 +124,7 @@ app.get('/user/twitter/callback', async (req, res) => {
                 oauth_token_secret: null
             })
 
-            res.json({ accessToken, accessSecret })
+            res.redirect("http://localhost:3001")
         })
         .catch(() => res.status(403).send('Invalid verifier or access tokens!'));
 });
